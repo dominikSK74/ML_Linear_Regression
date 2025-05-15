@@ -1,6 +1,7 @@
 import keras
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
 #DATA SET FROM GOOGLE ML COURSE
 
@@ -44,13 +45,47 @@ def train_model(model, features, label, epchos, batch_size):
 
     print("model trained successfully\n")
     return trained_weights, trained_bias, epchos, rmse
+    
 
 def model_info(model_output):
     print("========== MODEL INFO ========== ")
-    print(f'WEIGHT: {model_output[0][0][0]}')
-    print(f'BIAS: {model_output[1][0]}')
-    print(f'RMSE: {model_output[2]}')
+    print(f'WEIGHTS: {model_output[0]}')
+    print(f'BIAS: {model_output[1]}')
     print("================================ ")
+
+def loss_curve(epchos, RMSE_history):
+    x = [i for i in range(epchos)]
+    plt.figure()
+    plt.plot(x, RMSE_history.tolist(), linewidth=2, color="red")
+    plt.title('Loss curve')
+    plt.xlabel('Epchos')
+    plt.ylabel('Loss')
+    plt.grid(True)
+    plt.show()
+
+def plot_model(dataset, bias, weight, features_name, label_name, sample_size=200):
+    sample_dataset = dataset.sample(n=sample_size, random_state=42)
+    x = sample_dataset[features_name[0]].values
+    y = sample_dataset[label_name].values
+    plt.figure()
+    plt.plot(x, y, color='red', linestyle='None', marker='o', markersize=5)
+    xx = np.linspace(0, max(x), 200);
+    yy = [weight * i + bias for i in xx]
+    plt.plot(xx, yy, color='blue', linestyle='--', linewidth=2)
+    plt.title('Model')
+    plt.xlabel(features_name[0])
+    plt.ylabel(label_name)
+    plt.grid(True)
+    plt.show()
+
+
+def make_plots(model_output, dataset, features_names, label_name):
+    print("PLOTS MAKER")
+    loss_curve(model_output[2], model_output[3])
+    #Only for one features
+    if len(features_names) == 1:
+        plot_model(dataset, model_output[1][0], model_output[0][0][0], features_names, label_name)
+
 
 
 def get_model(dataset, features_names, label_name, learning_rate, epchos, batch_size):
@@ -65,7 +100,9 @@ def get_model(dataset, features_names, label_name, learning_rate, epchos, batch_
     
     model = build_model(learning_rate, n_features)
     model_output = train_model(model, features, label, epchos, batch_size)
+
     model_info(model_output)
+    make_plots(model_output, dataset, features_names, label_name)
 
     return model
 
@@ -87,6 +124,7 @@ def show_predictions(model, dataset, features, label):
     })
     
     result_dataframe['LOSS_L1'] = abs(result_dataframe['FARE'] - result_dataframe['PREDICTED_FARE'])
+
     print(result_dataframe)
 
 #hyperparameters
@@ -97,10 +135,11 @@ batch_size = 50
 features = ['TRIP_MILES']
 label = 'FARE'
 
-model = get_model(training_dataset, features, label, learning_rate, epchos, batch_size)
-show_predictions(model, training_dataset, features, label)
+model1 = get_model(training_dataset, features, label, learning_rate, epchos, batch_size)
+show_predictions(model1, training_dataset, features, label)
 
+features = ['TRIP_MILES', 'TRIP_SECONDS']
+model2 = get_model(training_dataset, features, label, learning_rate, epchos, batch_size)
+show_predictions(model2, training_dataset, features, label)
 
-
-
-
+model2.save("linear_regression_model.keras")
